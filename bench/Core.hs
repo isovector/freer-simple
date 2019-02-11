@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -ddump-simpl -dsuppress-all #-}
+{-# OPTIONS_GHC -ddump-simpl -dsuppress-all -fno-warn-unused-top-binds #-}
 
 module Main (main) where
 
@@ -49,14 +49,14 @@ main =
   defaultMain [
     bgroup "State" [
         bench "freer.get"          $ whnf oneGet 0
-      , bench "mtl.get"            $ whnf oneGetMTL 0
+      -- , bench "mtl.get"            $ whnf oneGetMTL 0
     ],
     bgroup "Countdown Bench" [
         bench "freer.State"    $ whnf countDown 10000
-      , bench "mtl.State"      $ whnf countDownMTL 10000
+      -- , bench "mtl.State"      $ whnf countDownMTL 10000
     ],
     bgroup "Countdown+Except Bench" [
         bench "freer.ExcState"  $ whnf countDownExc 10000
-      , bench "mtl.ExceptState" $ whnf countDownExcMTL 10000
+      -- , bench "mtl.ExceptState" $ whnf countDownExcMTL 10000
     ]
   ]

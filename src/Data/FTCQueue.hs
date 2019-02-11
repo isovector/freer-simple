@@ -37,27 +37,27 @@ data FTCQueue m a b where
 -- | Build a leaf from a single operation. [O(1)]
 tsingleton :: (a -> m b) -> FTCQueue m a b
 tsingleton = Leaf
-{-# INLINE tsingleton #-}
+{-# INLINABLE tsingleton #-}
 
 -- | Append an operation to the right of the tree. [O(1)]
 (|>) :: FTCQueue m a x -> (x -> m b) -> FTCQueue m a b
 t |> r = Node t (Leaf r)
-{-# INLINE (|>) #-}
+{-# INLINABLE (|>) #-}
 
 -- | An alias for '(|>)'
 snoc :: FTCQueue m a x -> (x -> m b) -> FTCQueue m a b
 snoc = (|>)
-{-# INLINE snoc #-}
+{-# INLINABLE snoc #-}
 
 -- | Append two trees of operations. [O(1)]
 (><)   :: FTCQueue m a x -> FTCQueue m x b -> FTCQueue m a b
 t1 >< t2 = Node t1 t2
-{-# INLINE (><) #-}
+{-# INLINABLE (><) #-}
 
 -- | An alias for '(><)'
 append :: FTCQueue m a x -> FTCQueue m x b -> FTCQueue m a b
 append = (><)
-{-# INLINE append #-}
+{-# INLINABLE append #-}
 
 -- | Left view deconstruction data structure.
 data ViewL m a b where
@@ -72,6 +72,5 @@ tviewl (Node t1 t2) = go t1 t2
     go :: FTCQueue m a x -> FTCQueue m x b -> ViewL m a b
     go (Leaf r)       tr = r :| tr
     go (Node tl1 tl2) tr = go tl1 (Node tl2 tr)
-    {-# INLINE go #-}
-{-# INLINE tviewl #-}
+    {-# INLINABLE go #-}
 

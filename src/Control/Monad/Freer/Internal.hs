@@ -212,6 +212,7 @@ runM (E u q) = case extract u of
   mb -> mb >>= runM . qApp q
   -- The other case is unreachable since Union [] a cannot be constructed.
   -- Therefore, run is a total function if its argument terminates.
+{-# INLINE runM #-}
 
 -- | Like 'replaceRelay', but with support for an explicit state to help
 -- implement the interpreter.
@@ -229,7 +230,6 @@ replaceRelayS s' pure' bind = loop s'
         Left  u -> E (weaken u) (tsingleton (k s))
       where
         k s'' x = loop s'' $ qApp q x
-    {-# INLINE loop #-}
 {-# INLINE replaceRelayS #-}
 
 -- | Interpret an effect by transforming it into another effect on top of the
@@ -249,7 +249,6 @@ replaceRelay pure' bind = loop
         Left  u -> E (weaken u) (tsingleton k)
       where
         k = qComp q loop
-    {-# INLINE loop #-}
 {-# INLINE replaceRelay #-}
 
 replaceRelayN
@@ -270,7 +269,6 @@ replaceRelayN pure' bind = loop
         k :: Arr (gs :++: effs) b w
         k = qComp q loop
         {-# INLINE k #-}
-    {-# INLINE loop #-}
 {-# INLINE replaceRelayN #-}
 
 -- | Given a request, either handle it or relay it.
@@ -291,7 +289,6 @@ handleRelay ret h = loop
       where
         k = qComp q loop
         {-# INLINE k #-}
-    {-# INLINE loop #-}
 {-# INLINE handleRelay #-}
 
 -- | Parameterized 'handleRelay'. Allows sending along some state of type
@@ -314,7 +311,6 @@ handleRelayS s' ret h = loop s'
         Left  u -> E u (tsingleton (k s))
       where
         k s'' x = loop s'' $ qApp q x
-    {-# INLINE loop #-}
 {-# INLINE handleRelayS #-}
 
 -- | Intercept the request and possibly reply to it, but leave it unhandled.
@@ -332,7 +328,6 @@ interpose ret h = loop
         _      -> E u (tsingleton k)
       where
         k = qComp q loop
-    {-# INLINE loop #-}
 {-# INLINE interpose #-}
 
 -- | Like 'interpose', but with support for an explicit state to help implement
@@ -352,7 +347,6 @@ interposeS s' ret h = loop s'
         _      -> E u (tsingleton (k s))
       where
         k s'' x = loop s'' $ qApp q x
-    {-# INLINE loop #-}
 {-# INLINE interposeS #-}
 
 -- | Embeds a less-constrained 'Eff' into a more-constrained one. Analogous to
@@ -362,7 +356,6 @@ raise = loop
   where
     loop (Val x) = pure x
     loop (E u q) = E (weaken u) . tsingleton $ qComp q loop
-    {-# INLINE loop #-}
 {-# INLINE raise #-}
 
 --------------------------------------------------------------------------------
