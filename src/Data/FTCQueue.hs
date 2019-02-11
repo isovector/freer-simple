@@ -72,3 +72,6 @@ tviewl (Node t1 t2) = go t1 t2
     go :: FTCQueue m a x -> FTCQueue m x b -> ViewL m a b
     go (Leaf r)       tr = r :| tr
     go (Node tl1 tl2) tr = go tl1 (Node tl2 tr)
+    {-# INLINE go #-}
+{-# INLINE tviewl #-}
+

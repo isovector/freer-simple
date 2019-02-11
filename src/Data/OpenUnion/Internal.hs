@@ -88,11 +88,13 @@ class FindElem (t :: * -> *) (r :: [* -> *]) where
 -- | Base case; element is at the current position in the list.
 instance FindElem t (t ': r) where
   elemNo = P 0
+  {-# INLINE elemNo #-}
 
 -- | Recursion; element is not at the current position, but is somewhere in the
 -- list.
 instance {-# OVERLAPPABLE #-} FindElem t r => FindElem t (t' ': r) where
   elemNo = P $ 1 + unP (elemNo :: P t r)
+  {-# INLINE elemNo #-}
 
 -- | Instance resolution for this class fails with a custom type error
 -- if @t :: * -> *@ is not in the list @r :: [* -> *]@.

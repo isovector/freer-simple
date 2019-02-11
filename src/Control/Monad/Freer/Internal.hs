@@ -128,11 +128,13 @@ qApp q' x = case tviewl q' of
   k :| t -> case k x of
     Val y -> qApp t y
     E u q -> E u (q >< t)
+{-# INLINE qApp #-}
 
 -- | Composition of effectful arrows ('Arrs'). Allows for the caller to change
 -- the effect environment, as well.
 qComp :: Arrs effs a b -> (Eff effs b -> Eff effs' c) -> Arr effs' a c
 qComp g h a = h $ qApp g a
+{-# INLINE qComp #-}
 
 instance Functor (Eff effs) where
   fmap f (Val x) = Val (f x)
@@ -197,6 +199,7 @@ sendM = send
 run :: Eff '[] a -> a
 run (Val x) = x
 run _       = error "Internal:run - This (E) should never happen"
+{-# INLINE run #-}
 
 -- | Like 'run', 'runM' runs an 'Eff' computation and extracts the result.
 -- /Unlike/ 'run', 'runM' allows a single effect to remain within the type-level
@@ -226,6 +229,7 @@ replaceRelayS s' pure' bind = loop s'
         Left  u -> E (weaken u) (tsingleton (k s))
       where
         k s'' x = loop s'' $ qApp q x
+    {-# INLINE loop #-}
 {-# INLINE replaceRelayS #-}
 
 -- | Interpret an effect by transforming it into another effect on top of the
@@ -245,6 +249,7 @@ replaceRelay pure' bind = loop
         Left  u -> E (weaken u) (tsingleton k)
       where
         k = qComp q loop
+    {-# INLINE loop #-}
 {-# INLINE replaceRelay #-}
 
 replaceRelayN
@@ -264,6 +269,8 @@ replaceRelayN pure' bind = loop
       where
         k :: Arr (gs :++: effs) b w
         k = qComp q loop
+        {-# INLINE k #-}
+    {-# INLINE loop #-}
 {-# INLINE replaceRelayN #-}
 
 -- | Given a request, either handle it or relay it.
@@ -283,6 +290,8 @@ handleRelay ret h = loop
         Left  u -> E u (tsingleton k)
       where
         k = qComp q loop
+        {-# INLINE k #-}
+    {-# INLINE loop #-}
 {-# INLINE handleRelay #-}
 
 -- | Parameterized 'handleRelay'. Allows sending along some state of type
@@ -305,6 +314,7 @@ handleRelayS s' ret h = loop s'
         Left  u -> E u (tsingleton (k s))
       where
         k s'' x = loop s'' $ qApp q x
+    {-# INLINE loop #-}
 {-# INLINE handleRelayS #-}
 
 -- | Intercept the request and possibly reply to it, but leave it unhandled.
@@ -322,6 +332,7 @@ interpose ret h = loop
         _      -> E u (tsingleton k)
       where
         k = qComp q loop
+    {-# INLINE loop #-}
 {-# INLINE interpose #-}
 
 -- | Like 'interpose', but with support for an explicit state to help implement
@@ -341,6 +352,7 @@ interposeS s' ret h = loop s'
         _      -> E u (tsingleton (k s))
       where
         k s'' x = loop s'' $ qApp q x
+    {-# INLINE loop #-}
 {-# INLINE interposeS #-}
 
 -- | Embeds a less-constrained 'Eff' into a more-constrained one. Analogous to
@@ -350,6 +362,7 @@ raise = loop
   where
     loop (Val x) = pure x
     loop (E u q) = E (weaken u) . tsingleton $ qComp q loop
+    {-# INLINE loop #-}
 {-# INLINE raise #-}
 
 --------------------------------------------------------------------------------
