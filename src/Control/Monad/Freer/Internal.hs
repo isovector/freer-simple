@@ -138,15 +138,21 @@ qComp g h a = h $ qApp g a
 
 instance Functor (Eff effs) where
   fmap f (Val x) = Val (f x)
-  fmap f (E u q) = E u (q |> (Val . f))
+  fmap f (E u q) = E u (q |> Val . f)
   {-# INLINE fmap #-}
+
+{-# RULES
+   "Effmap" [2] forall f g q.
+     (|>) (q |> (\a -> Val (f a))) (\a -> Val (g a))
+        = (q |> (\a -> Val (g (f a))))
+   #-}
 
 instance Applicative (Eff effs) where
   pure = Val
   {-# INLINE pure #-}
 
   Val f <*> Val x = Val $ f x
-  Val f <*> E u q = E u (q |> (Val . f))
+  Val f <*> E u q = E u (q |> Val . f)
   E u q <*> m     = E u (q |> (`fmap` m))
   {-# INLINE (<*>) #-}
 

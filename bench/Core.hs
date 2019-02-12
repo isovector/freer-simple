@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -ddump-simpl -dsuppress-all -fno-warn-unused-top-binds #-}
+{-# OPTIONS_GHC -ddump-simpl-stats -dsuppress-all -fno-warn-unused-top-binds #-}
 
 module Main (main) where
 

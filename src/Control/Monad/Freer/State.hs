@@ -74,7 +74,7 @@ runState :: forall s effs a. s -> Eff (State s ': effs) a -> Eff effs (a, s)
 runState s0 = handleRelayS s0 (\s x -> pure (x, s)) $ \s x k -> case x of
   Get -> k s s
   Put s' -> k s' ()
-{-# INLINABLE runState #-}
+{-# INLINE runState #-}
 
 -- | Run a 'State' effect, returning only the final state.
 execState :: forall s effs a. s -> Eff (State s ': effs) a -> Eff effs s

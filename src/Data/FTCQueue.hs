@@ -44,6 +44,8 @@ tsingleton = Leaf
 t |> r = Node t (Leaf r)
 {-# INLINABLE (|>) #-}
 
+infixl 1 |>
+
 -- | An alias for '(|>)'
 snoc :: FTCQueue m a x -> (x -> m b) -> FTCQueue m a b
 snoc = (|>)

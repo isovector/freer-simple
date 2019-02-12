@@ -75,10 +75,10 @@ data ViewR s t a b where
 -- Explicit Digit type (Exercise 1)
 
 data Digit t a b where
-    One :: t a b -> Digit t a b
-    Two :: t a b -> t b c -> Digit t a c
+    One   :: t a b -> Digit t a b
+    Two   :: t a b -> t b c -> Digit t a c
     Three :: t a b -> t b c -> t c d -> Digit t a d
-    Four :: t a b -> t b c -> t c d -> t d e -> Digit t a e
+    Four  :: t a b -> t b c -> t c d -> t d e -> Digit t a e
 
 ---------------------------
 -- 4.2 Caching measurements
