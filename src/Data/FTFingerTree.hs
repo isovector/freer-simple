@@ -91,7 +91,6 @@ data Node t a b where
 nodeToDigit :: Node t a b -> Digit t a b
 nodeToDigit (Node2 a b) = Two a b
 nodeToDigit (Node3 a b c) = Three a b c
-{-# INLINABLE nodeToDigit #-}
 
 -- | A representation of a sequence of values of type @a@, allowing
 -- access to the ends in constant time, and append and split in time
@@ -117,7 +116,6 @@ data FTFingerTree t a b where
 -- TODO(sandy): should this be to/from void?
 empty :: FTFingerTree t a a
 empty = Empty
-{-# INLINABLE empty #-}
 
 -- | /O(1)/. Add an element to the left end of a sequence.
 -- Mnemonic: a triangle with the single element at the pointy end.
@@ -128,14 +126,12 @@ a <| Deep (Four b c d e) m sf = m `seq`
     Deep (Two a b) (Node3 c d e <| m) sf
 a <| Deep pr m sf     =
     Deep (consDigit a pr) m sf
-{-# INLINABLE (<|) #-}
 
 consDigit :: t a b -> Digit t b c -> Digit t a c
 consDigit a (One b) = Two a b
 consDigit a (Two b c) = Three a b c
 consDigit a (Three b c d) = Four a b c d
 consDigit _ (Four _ _ _ _) = illegal_argument "consDigit"
-{-# INLINABLE consDigit #-}
 
 -- | /O(1)/. Add an element to the right end of a sequence.
 -- Mnemonic: a triangle with the single element at the pointy end.
@@ -146,20 +142,17 @@ Deep pr m (Four a b c d) |> e = m `seq`
     Deep pr (m |> Node3 a b c) (Two d e)
 Deep pr m sf |> x     =
     Deep pr m (snocDigit sf x)
-{-# INLINABLE (|>) #-}
 
 snocDigit :: Digit t a b -> t b c -> Digit t a c
 snocDigit (One a) b = Two a b
 snocDigit (Two a b) c = Three a b c
 snocDigit (Three a b c) d = Four a b c d
 snocDigit (Four _ _ _ _) _ = illegal_argument "snocDigit"
-{-# INLINABLE snocDigit #-}
 
 -- | /O(1)/. Is this the empty sequence?
 null :: FTFingerTree t a b -> Bool
 null Empty = True
 null _ = False
-{-# INLINABLE null #-}
 
 -- | /O(1)/. Analyse the left end of a sequence.
 viewl :: FTFingerTree t a b -> ViewL (FTFingerTree t) t a b
@@ -169,7 +162,6 @@ viewl (Deep (One x) m sf)     =  x :< rotL m sf
 viewl (Deep pr m sf)          =
   case lconsDigit pr of
     ConsL headDigit tailDigit -> headDigit :< Deep tailDigit m sf
-{-# INLINABLE viewl #-}
 
 rotL
     :: FTFingerTree (Node t) a b
@@ -178,7 +170,6 @@ rotL
 rotL m sf      =   case viewl m of
     EmptyL  ->  digitToTree sf
     a :< m' ->  Deep (nodeToDigit a) m' sf
-{-# INLINABLE rotL #-}
 
 data ConsL t a b where
   ConsL :: t a x -> Digit t x b -> ConsL t a b
@@ -188,7 +179,6 @@ lconsDigit (One _) = illegal_argument "lconsDigit"
 lconsDigit (Two a b) = ConsL a $ One b
 lconsDigit (Three a b c) = ConsL a $ Two b c
 lconsDigit (Four a b c d) = ConsL a $ Three b c d
-{-# INLINABLE lconsDigit #-}
 
 -- | /O(1)/. Analyse the right end of a sequence.
 viewr :: FTFingerTree t a b -> ViewR (FTFingerTree t) t a b
@@ -198,13 +188,11 @@ viewr (Deep pr m (One x))     =  rotR pr m :> x
 viewr (Deep pr m sf)          =
   case rconsDigit sf of
     ConsR x y -> Deep pr m x :> y
-{-# INLINABLE viewr #-}
 
 rotR :: Digit t a b -> FTFingerTree (Node t) b c -> FTFingerTree t a c
 rotR pr m = case viewr m of
     EmptyR  ->  digitToTree pr
     m' :> a ->  Deep pr m' (nodeToDigit a)
-{-# INLINABLE rotR #-}
 
 data ConsR t a b where
   ConsR :: Digit t a x -> t x b -> ConsR t a b
@@ -214,14 +202,12 @@ rconsDigit (One _) = illegal_argument "rconsDigit"
 rconsDigit (Two a b) = ConsR (One a) b
 rconsDigit (Three a b c) = ConsR (Two a b) c
 rconsDigit (Four a b c d) = ConsR (Three a b c) d
-{-# INLINABLE rconsDigit #-}
 
 digitToTree :: Digit t a b -> FTFingerTree t a b
 digitToTree (One a) = Single a
 digitToTree (Two a b) = Deep (One a) Empty (One b)
 digitToTree (Three a b c) = Deep (Two a b) Empty (One c)
 digitToTree (Four a b c d) = Deep (Two a b) Empty (Two c d)
-{-# INLINABLE digitToTree #-}
 
 ----------------
 -- Concatenation
@@ -230,7 +216,6 @@ digitToTree (Four a b c d) = Deep (Two a b) Empty (Two c d)
 -- | /O(log(min(n1,n2)))/. Concatenate two sequences.
 (><) :: FTFingerTree t a b -> FTFingerTree t b c -> FTFingerTree t a c
 (><) =  appendTree0
-{-# INLINABLE (><) #-}
 
 appendTree0
     :: FTFingerTree t a b
@@ -246,7 +231,6 @@ appendTree0 xs (Single x) =
     xs |> x
 appendTree0 (Deep pr1 m1 sf1) (Deep pr2 m2 sf2) =
     Deep pr1 (addDigits0 m1 sf1 pr2 m2) sf2
-{-# INLINABLE appendTree0 #-}
 
 addDigits0
     :: FTFingerTree (Node t) a b
@@ -286,7 +270,6 @@ addDigits0 m1 (Four a b c d) (Three e f g) m2 =
     appendTree3 m1 (Node3 a b c) (Node2 d e) (Node2 f g) m2
 addDigits0 m1 (Four a b c d) (Four e f g h) m2 =
     appendTree3 m1 (Node3 a b c) (Node3 d e f) (Node2 g h) m2
-{-# INLINABLE addDigits0 #-}
 
 appendTree1
     :: FTFingerTree t a b
@@ -303,7 +286,6 @@ appendTree1 xs a (Single x) =
     xs |> a |> x
 appendTree1 (Deep pr1 m1 sf1) a (Deep pr2 m2 sf2) =
     Deep pr1 (addDigits1 m1 sf1 a pr2 m2) sf2
-{-# INLINABLE appendTree1 #-}
 
 
 addDigits1
@@ -345,7 +327,6 @@ addDigits1 m1 (Four a b c d) e (Three f g h) m2 =
     appendTree3 m1 (Node3 a b c) (Node3 d e f) (Node2 g h) m2
 addDigits1 m1 (Four a b c d) e (Four f g h i) m2 =
     appendTree3 m1 (Node3 a b c) (Node3 d e f) (Node3 g h i) m2
-{-# INLINABLE addDigits1 #-}
 
 appendTree2
     :: FTFingerTree t a b
@@ -363,7 +344,6 @@ appendTree2 xs a b (Single x) =
     xs |> a |> b |> x
 appendTree2 (Deep pr1 m1 sf1) a b (Deep pr2 m2 sf2) =
     Deep pr1 (addDigits2 m1 sf1 a b pr2 m2) sf2
-{-# INLINABLE appendTree2 #-}
 
 addDigits2
     :: FTFingerTree (Node t) a b
@@ -405,7 +385,6 @@ addDigits2 m1 (Four a b c d) e f (Three g h i) m2 =
     appendTree3 m1 (Node3 a b c) (Node3 d e f) (Node3 g h i) m2
 addDigits2 m1 (Four a b c d) e f (Four g h i j) m2 =
     appendTree4 m1 (Node3 a b c) (Node3 d e f) (Node2 g h) (Node2 i j) m2
-{-# INLINABLE addDigits2 #-}
 
 appendTree3
     :: FTFingerTree t a b
@@ -424,7 +403,6 @@ appendTree3 xs a b c (Single x) =
     xs |> a |> b |> c |> x
 appendTree3 (Deep pr1 m1 sf1) a b c (Deep pr2 m2 sf2) =
     Deep pr1 (addDigits3 m1 sf1 a b c pr2 m2) sf2
-{-# INLINABLE appendTree3 #-}
 
 addDigits3
     :: FTFingerTree (Node t) a b
@@ -467,7 +445,6 @@ addDigits3 m1 (Four a b c d) e f g (Three h i j) m2 =
     appendTree4 m1 (Node3 a b c) (Node3 d e f) (Node2 g h) (Node2 i j) m2
 addDigits3 m1 (Four a b c d) e f g (Four h i j k) m2 =
     appendTree4 m1 (Node3 a b c) (Node3 d e f) (Node3 g h i) (Node2 j k) m2
-{-# INLINABLE addDigits3 #-}
 
 appendTree4
     :: FTFingerTree t a b
@@ -487,7 +464,6 @@ appendTree4 xs a b c d (Single x) =
     xs |> a |> b |> c |> d |> x
 appendTree4 (Deep pr1 m1 sf1) a b c d (Deep pr2 m2 sf2) =
     Deep pr1 (addDigits4 m1 sf1 a b c d pr2 m2) sf2
-{-# INLINABLE appendTree4 #-}
 
 addDigits4
     :: FTFingerTree (Node t) a b
@@ -531,10 +507,8 @@ addDigits4 m1 (Four a b c d) e f g h (Three i j k) m2 =
     appendTree4 m1 (Node3 a b c) (Node3 d e f) (Node3 g h i) (Node2 j k) m2
 addDigits4 m1 (Four a b c d) e f g h (Four i j k l) m2 =
     appendTree4 m1 (Node3 a b c) (Node3 d e f) (Node3 g h i) (Node3 j k l) m2
-{-# INLINABLE addDigits4 #-}
 
 illegal_argument :: String -> a
 illegal_argument name =
     error $ "Logic error: " ++ name ++ " called with illegal argument"
-{-# INLINABLE illegal_argument #-}
 

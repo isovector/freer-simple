@@ -29,14 +29,12 @@ newtype Error e r where
 -- | Throws an error carrying information of type @e :: *@.
 throwError :: forall e effs a. Member (Error e) effs => e -> Eff effs a
 throwError e = send (Error e)
-{-# INLINABLE throwError #-}
 
 -- | Handler for exception effects. If there are no exceptions thrown, returns
 -- 'Right'. If exceptions are thrown and not handled, returns 'Left', while
 -- interrupting the execution of any other effect handlers.
 runError :: forall e effs a. Eff (Error e ': effs) a -> Eff effs (Either e a)
 runError = handleRelay (pure . Right) (\(Error e) _ -> pure (Left e))
-{-# INLINABLE runError #-}
 
 -- | A catcher for Exceptions. Handlers are allowed to rethrow exceptions.
 catchError

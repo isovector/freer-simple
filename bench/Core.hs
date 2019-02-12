@@ -47,10 +47,10 @@ countDownExcMTL = MTL.runStateT go
 main :: IO ()
 main =
   defaultMain [
-    bgroup "State" [
-        bench "freer.get"          $ whnf oneGet 0
-      -- , bench "mtl.get"            $ whnf oneGetMTL 0
-    ],
+    -- bgroup "State" [
+    --     bench "freer.get"          $ whnf oneGet 0
+    --   -- , bench "mtl.get"            $ whnf oneGetMTL 0
+    -- ],
     bgroup "Countdown Bench" [
         bench "freer.State"    $ whnf countDown 10000
       -- , bench "mtl.State"      $ whnf countDownMTL 10000

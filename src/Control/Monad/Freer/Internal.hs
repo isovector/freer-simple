@@ -129,7 +129,6 @@ data Eff effs a
 
 tsingleton :: (a -> Eff effs b) -> Arrs effs a b
 tsingleton = Single . EffArr
-{-# INLINE tsingleton #-}
 
 -- | Function application in the context of an array of effects,
 -- @'Arrs' effs b w@.
@@ -140,40 +139,32 @@ qApp q' x =
     k :< t -> case unEffArr k x of
       Val y -> qApp t y
       E u q -> E u (q >< t)
-{-# INLINE qApp #-}
 
 -- | Composition of effectful arrows ('Arrs'). Allows for the caller to change
 -- the effect environment, as well.
 qComp :: Arrs effs a b -> (Eff effs b -> Eff effs' c) -> Arr effs' a c
 qComp g h a = h $ qApp g a
-{-# INLINE qComp #-}
 
 instance Functor (Eff effs) where
   fmap f (Val x) = Val (f x)
   fmap f (E u q) = E u (q |> EffArr (Val . f))
-  {-# INLINE fmap #-}
 
 instance Applicative (Eff effs) where
   pure = Val
-  {-# INLINE pure #-}
 
   Val f <*> Val x = Val $ f x
   Val f <*> E u q = E u (q |> EffArr (Val . f))
   E u q <*> m     = E u (q |> EffArr (`fmap` m))
-  {-# INLINE (<*>) #-}
 
 instance Monad (Eff effs) where
   Val x >>= k = k x
   E u q >>= k = E u (q |> EffArr k)
-  {-# INLINE (>>=) #-}
 
 instance (MonadBase b m, LastMember m effs) => MonadBase b (Eff effs) where
   liftBase = sendM . liftBase
-  {-# INLINE liftBase #-}
 
 instance (MonadIO m, LastMember m effs) => MonadIO (Eff effs) where
   liftIO = sendM . liftIO
-  {-# INLINE liftIO #-}
 
 -- | “Sends” an effect, which should be a value defined as part of an effect
 -- algebra (see the module documentation for "Control.Monad.Freer"), to an
@@ -181,14 +172,12 @@ instance (MonadIO m, LastMember m effs) => MonadIO (Eff effs) where
 -- the 'Eff' monad so that it can be used and handled.
 send :: Member eff effs => eff a -> Eff effs a
 send t = E (inj t) (tsingleton Val)
-{-# INLINE send #-}
 
 -- | Identical to 'send', but specialized to the final effect in @effs@ to
 -- assist type inference. This is useful for running actions in a monad
 -- transformer stack used in conjunction with 'runM'.
 sendM :: (Monad m, LastMember m effs) => m a -> Eff effs a
 sendM = send
-{-# INLINE sendM #-}
 
 --------------------------------------------------------------------------------
                        -- Base Effect Runner --
@@ -224,7 +213,6 @@ runM (E u q) = case extract u of
   mb -> mb >>= runM . qApp q
   -- The other case is unreachable since Union [] a cannot be constructed.
   -- Therefore, run is a total function if its argument terminates.
-{-# INLINE runM #-}
 
 -- | Like 'replaceRelay', but with support for an explicit state to help
 -- implement the interpreter.
@@ -242,7 +230,6 @@ replaceRelayS s' pure' bind = loop s'
         Left  u -> E (weaken u) (tsingleton (k s))
       where
         k s'' x = loop s'' $ qApp q x
-{-# INLINE replaceRelayS #-}
 
 -- | Interpret an effect by transforming it into another effect on top of the
 -- stack. The primary use case of this function is allow interpreters to be
@@ -261,7 +248,6 @@ replaceRelay pure' bind = loop
         Left  u -> E (weaken u) (tsingleton k)
       where
         k = qComp q loop
-{-# INLINE replaceRelay #-}
 
 replaceRelayN
   :: forall gs t a effs w
@@ -280,8 +266,6 @@ replaceRelayN pure' bind = loop
       where
         k :: Arr (gs :++: effs) b w
         k = qComp q loop
-        {-# INLINE k #-}
-{-# INLINE replaceRelayN #-}
 
 -- | Given a request, either handle it or relay it.
 handleRelay
@@ -300,8 +284,6 @@ handleRelay ret h = loop
         Left  u -> E u (tsingleton k)
       where
         k = qComp q loop
-        {-# INLINE k #-}
-{-# INLINE handleRelay #-}
 
 -- | Parameterized 'handleRelay'. Allows sending along some state of type
 -- @s :: *@ to be handled for the target effect, or relayed to a handler that
@@ -323,7 +305,7 @@ handleRelayS s' ret h = loop s'
         Left  u -> E u (tsingleton (k s))
       where
         k s'' x = loop s'' $ qApp q x
-{-# INLINE handleRelayS #-}
+{-# INLINABLE handleRelayS #-}
 
 -- | Intercept the request and possibly reply to it, but leave it unhandled.
 interpose
@@ -340,7 +322,6 @@ interpose ret h = loop
         _      -> E u (tsingleton k)
       where
         k = qComp q loop
-{-# INLINE interpose #-}
 
 -- | Like 'interpose', but with support for an explicit state to help implement
 -- the interpreter.
@@ -359,7 +340,6 @@ interposeS s' ret h = loop s'
         _      -> E u (tsingleton (k s))
       where
         k s'' x = loop s'' $ qApp q x
-{-# INLINE interposeS #-}
 
 -- | Embeds a less-constrained 'Eff' into a more-constrained one. Analogous to
 -- MTL's 'lift'.
@@ -368,7 +348,6 @@ raise = loop
   where
     loop (Val x) = pure x
     loop (E u q) = E (weaken u) . tsingleton $ qComp q loop
-{-# INLINE raise #-}
 
 --------------------------------------------------------------------------------
                     -- Nondeterministic Choice --
