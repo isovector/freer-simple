@@ -1,7 +1,8 @@
 {-# OPTIONS_GHC -Wno-redundant-constraints #-} -- Due to sendM.
-{-# OPTIONS_HADDOCK not-home #-}
+{-# OPTIONS_HADDOCK not-home               #-}
 
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE RoleAnnotations #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- The following is needed to define MonadPlus instance. It is decidable
@@ -41,7 +42,8 @@ module Control.Monad.Freer.Internal
     --
     -- | Fast type-aligned queue optimized to effectful functions of type
     -- @(a -> m b)@.
-  , module Data.FTCQueue
+  , module Data.FTFingerTree
+  , tsingleton
 
     -- ** Sending Arbitrary Effect
   , send
@@ -76,7 +78,7 @@ import Control.Monad (MonadPlus(..))
 import Control.Monad.Base (MonadBase, liftBase)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 
-import Data.FTCQueue
+import Data.FTFingerTree
 import Data.OpenUnion
 
 -- | Effectful arrow type: a function from @a :: *@ to @b :: *@ that also does
@@ -87,7 +89,12 @@ type Arr effs a b = a -> Eff effs b
 -- several effectful functions. The paremeter @effs :: [* -> *]@ describes the
 -- overall effect. The composition members are accumulated in a type-aligned
 -- queue.
-type Arrs effs a b = FTCQueue (Eff effs) a b
+type Arrs effs a b = FTFingerTree (EffArr effs) a b
+
+newtype EffArr effs a b = EffArr
+  { unEffArr :: a -> Eff effs b
+  }
+type role EffArr representational nominal nominal
 
 -- | The 'Eff' monad provides the implementation of a computation that performs
 -- an arbitrary set of algebraic effects. In @'Eff' effs a@, @effs@ is a
@@ -120,14 +127,19 @@ data Eff effs a
   -- ^ Sending a request of type @Union effs@ with the continuation
   -- @'Arrs' r b a@.
 
+tsingleton :: (a -> Eff effs b) -> Arrs effs a b
+tsingleton = Single . EffArr
+{-# INLINE tsingleton #-}
+
 -- | Function application in the context of an array of effects,
 -- @'Arrs' effs b w@.
 qApp :: Arrs effs b w -> b -> Eff effs w
-qApp q' x = case tviewl q' of
-  TOne k  -> k x
-  k :| t -> case k x of
-    Val y -> qApp t y
-    E u q -> E u (q >< t)
+qApp q' x =
+  case viewl q' of
+    EmptyL  -> pure x
+    k :< t -> case unEffArr k x of
+      Val y -> qApp t y
+      E u q -> E u (q >< t)
 {-# INLINE qApp #-}
 
 -- | Composition of effectful arrows ('Arrs'). Allows for the caller to change
@@ -138,27 +150,21 @@ qComp g h a = h $ qApp g a
 
 instance Functor (Eff effs) where
   fmap f (Val x) = Val (f x)
-  fmap f (E u q) = E u (q |> Val . f)
+  fmap f (E u q) = E u (q |> EffArr (Val . f))
   {-# INLINE fmap #-}
-
-{-# RULES
-   "Effmap" [2] forall f g q.
-     (|>) (q |> (\a -> Val (f a))) (\a -> Val (g a))
-        = (q |> (\a -> Val (g (f a))))
-   #-}
 
 instance Applicative (Eff effs) where
   pure = Val
   {-# INLINE pure #-}
 
   Val f <*> Val x = Val $ f x
-  Val f <*> E u q = E u (q |> Val . f)
-  E u q <*> m     = E u (q |> (`fmap` m))
+  Val f <*> E u q = E u (q |> EffArr (Val . f))
+  E u q <*> m     = E u (q |> EffArr (`fmap` m))
   {-# INLINE (<*>) #-}
 
 instance Monad (Eff effs) where
   Val x >>= k = k x
-  E u q >>= k = E u (q |> k)
+  E u q >>= k = E u (q |> EffArr k)
   {-# INLINE (>>=) #-}
 
 instance (MonadBase b m, LastMember m effs) => MonadBase b (Eff effs) where
